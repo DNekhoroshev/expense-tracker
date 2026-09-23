@@ -1,0 +1,9 @@
+import { HomePage } from "@/views/home";
+
+export default function Page() {
+  return (
+    <main className="flex min-h-svh items-center justify-center p-6">
+      <HomePage />
+    </main>
+  );
+}
