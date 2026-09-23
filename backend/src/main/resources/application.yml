@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: backend
+  datasource:
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:expense_tracker}
+    username: ${POSTGRES_USER:expense_tracker}
+    password: ${POSTGRES_PASSWORD:change-me}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-at-least-32-bytes-long}
+    expiration: ${JWT_EXPIRATION:24h}
+    issuer: https://expense-tracker
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
