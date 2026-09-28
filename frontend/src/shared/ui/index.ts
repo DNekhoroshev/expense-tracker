@@ -1,4 +1,5 @@
 export { Alert, AlertDescription, AlertTitle } from "./alert";
+export { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 export { Button, buttonVariants } from "./button";
 export { Checkbox } from "./checkbox";
 export {
@@ -22,3 +23,4 @@ export {
 } from "./form";
 export { Input } from "./input";
 export { Label } from "./label";
+export { Skeleton } from "./skeleton";
