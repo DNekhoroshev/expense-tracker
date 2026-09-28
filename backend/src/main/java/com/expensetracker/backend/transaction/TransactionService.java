@@ -4,6 +4,8 @@ import com.expensetracker.backend.category.Category;
 import com.expensetracker.backend.category.CategoryRepository;
 import com.expensetracker.backend.user.User;
 import com.expensetracker.backend.user.UserRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +55,14 @@ public class TransactionService {
 
         return new TransactionListResponse(year, month, items, totalIncome, totalExpense,
                 totalIncome.subtract(totalExpense));
+    }
+
+    /** Pages through all of the user's transactions, newest first, in the same order as {@link #findAll}. */
+    @Transactional(readOnly = true)
+    public TransactionPageResponse findRecent(Long userId, int page, int size) {
+        Sort newestFirst = Sort.by(Sort.Direction.DESC, "date").and(Sort.by(Sort.Direction.DESC, "id"));
+        return TransactionPageResponse.from(
+                transactionRepository.findAllByUserId(userId, PageRequest.of(page, size, newestFirst)));
     }
 
     @Transactional(readOnly = true)

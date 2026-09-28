@@ -10,6 +10,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -133,6 +137,30 @@ class TransactionServiceTest {
         assertThat(response.totalIncome()).isEqualByComparingTo("0");
         assertThat(response.totalExpense()).isEqualByComparingTo("0");
         assertThat(response.balance()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void findRecent_requestsNewestFirstPageAndMapsIt() {
+        when(transactionRepository.findAllByUserId(any(), any(Pageable.class)))
+                .thenAnswer(invocation -> new PageImpl<>(
+                        List.of(transaction(groceries, "12.50", TransactionType.EXPENSE)),
+                        invocation.getArgument(1), 21));
+
+        TransactionPageResponse response = transactionService.findRecent(USER_ID, 1, 10);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(transactionRepository).findAllByUserId(eq(USER_ID), captor.capture());
+        Pageable pageable = captor.getValue();
+
+        assertThat(pageable.getPageNumber()).isEqualTo(1);
+        assertThat(pageable.getPageSize()).isEqualTo(10);
+        assertThat(pageable.getSort()).containsExactly(Sort.Order.desc("date"), Sort.Order.desc("id"));
+
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.totalElements()).isEqualTo(21);
+        assertThat(response.totalPages()).isEqualTo(3);
     }
 
     @Test

@@ -39,6 +39,14 @@ public class TransactionController {
         return transactionService.findAll(currentUserId(jwt), resolvedYear, month);
     }
 
+    /** All of the user's transactions, newest first, one zero-based page at a time. */
+    @GetMapping("/recent")
+    public TransactionPageResponse findRecent(@AuthenticationPrincipal Jwt jwt,
+                                              @RequestParam(defaultValue = "0") @Min(0) int page,
+                                              @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        return transactionService.findRecent(currentUserId(jwt), page, size);
+    }
+
     @GetMapping("/{id}")
     public TransactionResponse findOne(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         return transactionService.findOne(currentUserId(jwt), id);
