@@ -10,11 +10,11 @@ import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    List<Transaction> findAllByUserIdAndDateBetweenOrderByDateDescIdDesc(Long userId, LocalDate from, LocalDate to);
+    List<Transaction> findAllByUser_IdAndDateBetweenOrderByDateDescIdDesc(Long userId, LocalDate from, LocalDate to);
 
-    Page<Transaction> findAllByUserId(Long userId, Pageable pageable);
+    Page<Transaction> findAllByUser_Id(Long userId, Pageable pageable);
 
-    Optional<Transaction> findByIdAndUserId(Long id, Long userId);
+    Optional<Transaction> findByIdAndUser_Id(Long id, Long userId);
 
-    boolean existsByCategoryId(Long categoryId);
+    boolean existsByCategory_Id(Long categoryId);
 }

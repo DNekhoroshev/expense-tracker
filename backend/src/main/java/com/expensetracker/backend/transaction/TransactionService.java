@@ -46,7 +46,7 @@ public class TransactionService {
         }
 
         List<TransactionResponse> items = transactionRepository
-                .findAllByUserIdAndDateBetweenOrderByDateDescIdDesc(userId, from, to).stream()
+                .findAllByUser_IdAndDateBetweenOrderByDateDescIdDesc(userId, from, to).stream()
                 .map(TransactionResponse::from)
                 .toList();
 
@@ -62,7 +62,7 @@ public class TransactionService {
     public TransactionPageResponse findRecent(Long userId, int page, int size) {
         Sort newestFirst = Sort.by(Sort.Direction.DESC, "date").and(Sort.by(Sort.Direction.DESC, "id"));
         return TransactionPageResponse.from(
-                transactionRepository.findAllByUserId(userId, PageRequest.of(page, size, newestFirst)));
+                transactionRepository.findAllByUser_Id(userId, PageRequest.of(page, size, newestFirst)));
     }
 
     @Transactional(readOnly = true)
@@ -112,13 +112,13 @@ public class TransactionService {
      * rather than leaking that the transaction exists.
      */
     private Transaction requireOwned(Long userId, Long transactionId) {
-        return transactionRepository.findByIdAndUserId(transactionId, userId)
+        return transactionRepository.findByIdAndUser_Id(transactionId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
     }
 
     /** The category comes from the request body, so a missing or foreign one is a bad request, not a 404. */
     private Category requireOwnedCategory(Long userId, Long categoryId) {
-        return categoryRepository.findByIdAndUserId(categoryId, userId)
+        return categoryRepository.findByIdAndUser_Id(categoryId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
     }
 

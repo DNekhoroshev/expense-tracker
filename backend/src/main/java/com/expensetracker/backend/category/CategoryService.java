@@ -26,7 +26,7 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> findAll(Long userId) {
-        return categoryRepository.findAllByUserIdOrderByNameAsc(userId).stream()
+        return categoryRepository.findAllByUser_IdOrderByNameAsc(userId).stream()
                 .map(CategoryResponse::from)
                 .toList();
     }
@@ -40,7 +40,7 @@ public class CategoryService {
     public CategoryResponse create(Long userId, CategoryRequest request) {
         String name = request.name().trim();
 
-        if (categoryRepository.existsByUserIdAndNameIgnoreCase(userId, name)) {
+        if (categoryRepository.existsByUser_IdAndNameIgnoreCase(userId, name)) {
             throw nameAlreadyUsed();
         }
 
@@ -55,7 +55,7 @@ public class CategoryService {
         Category category = requireOwned(userId, categoryId);
         String name = request.name().trim();
 
-        if (categoryRepository.existsByUserIdAndNameIgnoreCaseAndIdNot(userId, name, categoryId)) {
+        if (categoryRepository.existsByUser_IdAndNameIgnoreCaseAndIdNot(userId, name, categoryId)) {
             throw nameAlreadyUsed();
         }
 
@@ -68,7 +68,7 @@ public class CategoryService {
     public void delete(Long userId, Long categoryId) {
         Category category = requireOwned(userId, categoryId);
 
-        if (transactionRepository.existsByCategoryId(categoryId)) {
+        if (transactionRepository.existsByCategory_Id(categoryId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Category has transactions");
         }
 
@@ -80,7 +80,7 @@ public class CategoryService {
      * rather than leaking that the category exists.
      */
     private Category requireOwned(Long userId, Long categoryId) {
-        return categoryRepository.findByIdAndUserId(categoryId, userId)
+        return categoryRepository.findByIdAndUser_Id(categoryId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
     }
 

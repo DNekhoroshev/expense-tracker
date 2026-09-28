@@ -48,7 +48,7 @@ class CategoryServiceTest {
     void create_trimsNameAndNormalizesColor() {
         CategoryRequest request = new CategoryRequest("  Groceries  ", "#4F46E5", " cart ");
 
-        when(categoryRepository.existsByUserIdAndNameIgnoreCase(USER_ID, "Groceries")).thenReturn(false);
+        when(categoryRepository.existsByUser_IdAndNameIgnoreCase(USER_ID, "Groceries")).thenReturn(false);
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -68,7 +68,7 @@ class CategoryServiceTest {
     @Test
     void create_duplicateName_throwsConflict() {
         CategoryRequest request = new CategoryRequest("Groceries", "#4f46e5", "cart");
-        when(categoryRepository.existsByUserIdAndNameIgnoreCase(USER_ID, "Groceries")).thenReturn(true);
+        when(categoryRepository.existsByUser_IdAndNameIgnoreCase(USER_ID, "Groceries")).thenReturn(true);
 
         assertThatThrownBy(() -> categoryService.create(USER_ID, request))
                 .isInstanceOf(ResponseStatusException.class)
@@ -80,20 +80,20 @@ class CategoryServiceTest {
     @Test
     void findAll_returnsOnlyOwnCategories() {
         Category category = new Category(user, "Groceries", "#4f46e5", "cart");
-        when(categoryRepository.findAllByUserIdOrderByNameAsc(USER_ID)).thenReturn(List.of(category));
+        when(categoryRepository.findAllByUser_IdOrderByNameAsc(USER_ID)).thenReturn(List.of(category));
 
         List<CategoryResponse> responses = categoryService.findAll(USER_ID);
 
         assertThat(responses).singleElement()
                 .satisfies(response -> assertThat(response.name()).isEqualTo("Groceries"));
-        verify(categoryRepository).findAllByUserIdOrderByNameAsc(USER_ID);
+        verify(categoryRepository).findAllByUser_IdOrderByNameAsc(USER_ID);
     }
 
     @Test
     void update_appliesNewValues() {
         Category category = new Category(user, "Groceries", "#4f46e5", "cart");
-        when(categoryRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.of(category));
-        when(categoryRepository.existsByUserIdAndNameIgnoreCaseAndIdNot(USER_ID, "Food", 10L)).thenReturn(false);
+        when(categoryRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.of(category));
+        when(categoryRepository.existsByUser_IdAndNameIgnoreCaseAndIdNot(USER_ID, "Food", 10L)).thenReturn(false);
         when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CategoryResponse response = categoryService.update(USER_ID, 10L, new CategoryRequest("Food", "#10B981", "bowl"));
@@ -105,7 +105,7 @@ class CategoryServiceTest {
 
     @Test
     void update_otherUsersCategory_throwsNotFound() {
-        when(categoryRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.update(USER_ID, 10L, new CategoryRequest("Food", "#10b981", "bowl")))
                 .isInstanceOf(ResponseStatusException.class)
@@ -114,7 +114,7 @@ class CategoryServiceTest {
 
     @Test
     void delete_otherUsersCategory_throwsNotFound() {
-        when(categoryRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.delete(USER_ID, 10L))
                 .isInstanceOf(ResponseStatusException.class)
@@ -126,7 +126,7 @@ class CategoryServiceTest {
     @Test
     void delete_ownCategory_removesIt() {
         Category category = new Category(user, "Groceries", "#4f46e5", "cart");
-        when(categoryRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.of(category));
+        when(categoryRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.of(category));
 
         categoryService.delete(USER_ID, 10L);
 
@@ -136,8 +136,8 @@ class CategoryServiceTest {
     @Test
     void delete_categoryWithTransactions_throwsConflict() {
         Category category = new Category(user, "Groceries", "#4f46e5", "cart");
-        when(categoryRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.of(category));
-        when(transactionRepository.existsByCategoryId(10L)).thenReturn(true);
+        when(categoryRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.of(category));
+        when(transactionRepository.existsByCategory_Id(10L)).thenReturn(true);
 
         assertThatThrownBy(() -> categoryService.delete(USER_ID, 10L))
                 .isInstanceOf(ResponseStatusException.class)
