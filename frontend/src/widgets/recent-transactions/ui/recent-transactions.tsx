@@ -22,6 +22,9 @@ export function RecentTransactions() {
   const { page, setPage, status, data, categoriesById, retry } = useRecentTransactions();
   const totalPages = data?.totalPages ?? 0;
   const isLoading = status.status === "loading";
+  // Rows are only ever shown under their own page number; while another page
+  // loads, the skeleton stands in rather than the previous page's rows.
+  const current = data?.page === page ? data : null;
 
   return (
     <Card>
@@ -43,11 +46,11 @@ export function RecentTransactions() {
               </Button>
             </AlertDescription>
           </Alert>
-        ) : isLoading && data === null ? (
+        ) : isLoading && current === null ? (
           <TransactionListSkeleton />
-        ) : data && data.items.length > 0 ? (
+        ) : current && current.items.length > 0 ? (
           <ul className={isLoading ? "divide-y opacity-60 transition-opacity" : "divide-y"} aria-busy={isLoading}>
-            {data.items.map((transaction) => {
+            {current.items.map((transaction) => {
               const category = categoriesById.get(transaction.categoryId);
               return (
                 <TransactionRow
@@ -59,7 +62,7 @@ export function RecentTransactions() {
               );
             })}
           </ul>
-        ) : data ? (
+        ) : current ? (
           <p className="text-muted-foreground py-8 text-center text-sm">Пока нет транзакций</p>
         ) : null}
       </CardContent>

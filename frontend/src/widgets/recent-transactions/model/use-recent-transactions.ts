@@ -15,9 +15,9 @@ type Status = { status: "loading" } | { status: "success" } | { status: "error";
  * Loads the user's transactions page by page, newest first, together with
  * their categories so rows can show category names.
  *
- * `data` is the last page that loaded successfully. While `page` is loading it
- * still holds the previous page; after an error on `page` it must not be shown
- * as rows, only used for the totals (`totalPages`, `totalElements`).
+ * `data` is the last page that loaded successfully, so while `page` loads or
+ * after it failed it may be a different page: its totals (`totalPages`,
+ * `totalElements`) still apply, its rows only when `data.page === page`.
  */
 export function useRecentTransactions() {
   const { session, signOut } = useSession();
