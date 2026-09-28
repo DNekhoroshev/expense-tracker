@@ -23,4 +23,5 @@ export {
 } from "./form";
 export { Input } from "./input";
 export { Label } from "./label";
+export { PageLoader } from "./page-loader";
 export { Skeleton } from "./skeleton";

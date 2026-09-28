@@ -1,11 +1,10 @@
 "use client";
 
-import { Loader2Icon } from "lucide-react";
 import Link from "next/link";
 
 import { useSession } from "@/entities/session";
 import { ROUTES } from "@/shared/config";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, PageLoader } from "@/shared/ui";
 import { AppHeader } from "@/widgets/app-header";
 import { RecentTransactions } from "@/widgets/recent-transactions";
 
@@ -13,11 +12,7 @@ export function HomePage() {
   const { session, status } = useSession();
 
   if (status === "loading") {
-    return (
-      <main className="flex min-h-svh items-center justify-center p-6">
-        <Loader2Icon className="text-muted-foreground size-6 animate-spin" />
-      </main>
-    );
+    return <PageLoader />;
   }
 
   if (session === null) {

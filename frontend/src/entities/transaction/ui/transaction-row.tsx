@@ -1,5 +1,4 @@
-import { cn } from "@/shared/lib/utils";
-import { formatAmount, formatDate } from "@/shared/lib/format";
+import { cn, formatAmount, formatDate } from "@/shared/lib";
 
 import type { Transaction } from "../model/types";
 

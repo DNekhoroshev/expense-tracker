@@ -8,7 +8,7 @@ import { useSession } from "@/entities/session";
 import { UserProfile } from "@/entities/user";
 import { LogoutButton } from "@/features/auth/logout";
 import { ROUTES } from "@/shared/config";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@/shared/lib";
 import { buttonVariants } from "@/shared/ui";
 
 const NAV_ITEMS = [
