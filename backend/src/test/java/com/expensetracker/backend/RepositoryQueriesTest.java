@@ -2,6 +2,7 @@ package com.expensetracker.backend;
 
 import com.expensetracker.backend.category.CategoryRepository;
 import com.expensetracker.backend.transaction.TransactionRepository;
+import com.expensetracker.backend.transaction.TransactionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,7 +44,8 @@ class RepositoryQueriesTest {
         LocalDate today = LocalDate.now();
         assertThat(transactionRepository.findAllByUser_IdAndDateBetweenOrderByDateDescIdDesc(MISSING, today, today))
                 .isEmpty();
-        assertThat(transactionRepository.findAllByUser_Id(MISSING, PageRequest.of(0, 10))).isEmpty();
+        assertThat(transactionRepository.findAllByUser_Id(MISSING,
+                PageRequest.of(0, 10, TransactionService.NEWEST_FIRST))).isEmpty();
         assertThat(transactionRepository.findByIdAndUser_Id(MISSING, MISSING)).isEmpty();
         assertThat(transactionRepository.existsByCategory_Id(MISSING)).isFalse();
     }

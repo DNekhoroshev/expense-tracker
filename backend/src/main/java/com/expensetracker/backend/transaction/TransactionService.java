@@ -57,12 +57,17 @@ public class TransactionService {
                 totalIncome.subtract(totalExpense));
     }
 
-    /** Pages through all of the user's transactions, newest first, in the same order as {@link #findAll}. */
+    /**
+     * Newest first, ties broken by id: the same order as {@link #findAll}'s
+     * {@code OrderByDateDescIdDesc}. Public so the repository query test can run it against the database.
+     */
+    public static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "date").and(Sort.by(Sort.Direction.DESC, "id"));
+
+    /** Pages through all of the user's transactions in {@link #NEWEST_FIRST} order. */
     @Transactional(readOnly = true)
     public TransactionPageResponse findRecent(Long userId, int page, int size) {
-        Sort newestFirst = Sort.by(Sort.Direction.DESC, "date").and(Sort.by(Sort.Direction.DESC, "id"));
         return TransactionPageResponse.from(
-                transactionRepository.findAllByUser_Id(userId, PageRequest.of(page, size, newestFirst)));
+                transactionRepository.findAllByUser_Id(userId, PageRequest.of(page, size, NEWEST_FIRST)));
     }
 
     @Transactional(readOnly = true)
