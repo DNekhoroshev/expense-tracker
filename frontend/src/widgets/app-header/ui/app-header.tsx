@@ -31,7 +31,8 @@ export function AppHeader() {
 
         <nav aria-label="Основное меню" className="order-last flex w-full gap-1 sm:order-none sm:w-auto">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const isActive = href === ROUTES.home ? pathname === href : pathname.startsWith(href);
+            const isActive =
+              pathname === href || (href !== ROUTES.home && pathname.startsWith(`${href}/`));
             return (
               <Link
                 key={href}

@@ -2,6 +2,7 @@
 export type Category = {
   id: number;
   name: string;
-  color: string | null;
-  icon: string | null;
+  /** Hex color such as `#4f46e5`. */
+  color: string;
+  icon: string;
 };

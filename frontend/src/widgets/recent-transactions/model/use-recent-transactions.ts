@@ -9,14 +9,15 @@ import { isApiError } from "@/shared/api";
 
 export const RECENT_TRANSACTIONS_PAGE_SIZE = 10;
 
-type State =
-  | { status: "loading"; data: TransactionPage | null }
-  | { status: "success"; data: TransactionPage }
-  | { status: "error"; data: TransactionPage | null; error: string };
+type Status = { status: "loading" } | { status: "success" } | { status: "error"; error: string };
 
 /**
  * Loads the user's transactions page by page, newest first, together with
  * their categories so rows can show category names.
+ *
+ * `data` is the last page that loaded successfully. While `page` is loading it
+ * still holds the previous page; after an error on `page` it must not be shown
+ * as rows, only used for the totals (`totalPages`, `totalElements`).
  */
 export function useRecentTransactions() {
   const { session, signOut } = useSession();
@@ -24,7 +25,8 @@ export function useRecentTransactions() {
 
   const [page, setPage] = useState(0);
   const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<State>({ status: "loading", data: null });
+  const [status, setStatus] = useState<Status>({ status: "loading" });
+  const [data, setData] = useState<TransactionPage | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
@@ -33,16 +35,17 @@ export function useRecentTransactions() {
     }
 
     const controller = new AbortController();
-    setState((previous) => ({ status: "loading", data: previous.data }));
+    setStatus({ status: "loading" });
 
     getRecentTransactions({ page, size: RECENT_TRANSACTIONS_PAGE_SIZE }, token, controller.signal)
-      .then((data) => {
+      .then((next) => {
         // The last item on the last page was deleted elsewhere: step back.
-        if (data.items.length === 0 && data.page > 0) {
-          setPage(Math.max(data.totalPages - 1, 0));
+        if (next.items.length === 0 && next.page > 0) {
+          setPage(Math.max(next.totalPages - 1, 0));
           return;
         }
-        setState({ status: "success", data });
+        setData(next);
+        setStatus({ status: "success" });
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) {
@@ -52,11 +55,10 @@ export function useRecentTransactions() {
           signOut();
           return;
         }
-        setState((previous) => ({
+        setStatus({
           status: "error",
-          data: previous.data,
           error: isApiError(error) ? error.message : "Не удалось загрузить транзакции.",
-        }));
+        });
       });
 
     return () => controller.abort();
@@ -83,5 +85,5 @@ export function useRecentTransactions() {
 
   const retry = useCallback(() => setAttempt((value) => value + 1), []);
 
-  return { page, setPage, state, categoriesById, retry };
+  return { page, setPage, status, data, categoriesById, retry };
 }

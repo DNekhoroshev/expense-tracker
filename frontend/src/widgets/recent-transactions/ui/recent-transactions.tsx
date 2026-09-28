@@ -19,10 +19,9 @@ import {
 import { RECENT_TRANSACTIONS_PAGE_SIZE, useRecentTransactions } from "../model/use-recent-transactions";
 
 export function RecentTransactions() {
-  const { page, setPage, state, categoriesById, retry } = useRecentTransactions();
-  const data = state.data;
+  const { page, setPage, status, data, categoriesById, retry } = useRecentTransactions();
   const totalPages = data?.totalPages ?? 0;
-  const isLoading = state.status === "loading";
+  const isLoading = status.status === "loading";
 
   return (
     <Card>
@@ -34,19 +33,17 @@ export function RecentTransactions() {
       </CardHeader>
 
       <CardContent>
-        {state.status === "error" ? (
-          <Alert variant="destructive" className="mb-4">
+        {status.status === "error" ? (
+          <Alert variant="destructive">
             <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-              {state.error}
+              {status.error}
               <Button size="sm" variant="outline" onClick={retry}>
                 <RotateCwIcon />
                 Повторить
               </Button>
             </AlertDescription>
           </Alert>
-        ) : null}
-
-        {isLoading && data === null ? (
+        ) : isLoading && data === null ? (
           <TransactionListSkeleton />
         ) : data && data.items.length > 0 ? (
           <ul className={isLoading ? "divide-y opacity-60 transition-opacity" : "divide-y"} aria-busy={isLoading}>
@@ -57,7 +54,7 @@ export function RecentTransactions() {
                   key={transaction.id}
                   transaction={transaction}
                   categoryName={category?.name}
-                  categoryColor={category?.color ?? undefined}
+                  categoryColor={category?.color}
                 />
               );
             })}
