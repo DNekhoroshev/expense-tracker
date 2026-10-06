@@ -97,11 +97,22 @@ Messages follow [Conventional Commits](https://www.conventionalcommits.org):
 
 The project follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow): one long-lived branch, short-lived topic branches, everything merged through pull requests.
 
-- **The main branch is always deployable.** Never commit or push directly to it; every change lands through a pull request. (Until the GitHub remote exists the local default branch may still be called `master`; it is renamed to `main` when the repo is published.)
+- **The main branch is always deployable.** Never commit or push directly to it; every change lands through a pull request. (The repo lives at `github.com/DNekhoroshev/expense-tracker`; its default branch is still called `master` — read "main" below as `master` until it is renamed.)
 - **One branch per change**, always created from an up-to-date main branch: `git switch main && git pull && git switch -c <type>/<short-name>`.
 - **Branch names** are `<type>/<short-kebab-case-name>`, where `<type>` is one of the Conventional Commit types (`feat`, `fix`, `refactor`, `docs`, `chore`, …) — e.g. `feat/home-screen`, `fix/login-redirect`. Optionally add the issue number: `feat/42-home-screen`.
 - **Keep branches short-lived and focused.** One feature or fix per branch; unrelated changes go to a separate branch. Sync with main (merge or rebase) when it moves on, rather than letting the branch drift.
 - **Commit early and often** on the branch, following the commit conventions above; the checks listed there must pass before opening a PR.
-- **Open a pull request** into main as soon as there is something to discuss (a draft PR is fine). The PR title follows the commit subject format; the description says what changed and why and how it was verified.
+- **Open a pull request** into main as soon as there is something to discuss (a draft PR is fine): `git push -u origin <branch>`, then `gh pr create --base master`. See *Pull requests* below for the title and description.
 - **Merge only after review and green checks**, preferably as a squash merge so the main history has one Conventional Commit per PR. Delete the branch after merging.
 - Claude does not push, open or merge PRs, or delete branches unless asked.
+
+## Pull requests
+
+- **Title** — a Conventional Commit subject (see *Commits*) summing up the whole branch, since it becomes the squash-merge commit: `feat(frontend): add home screen with recent transactions`. Use the widest scope that fits; omit it when the PR spans both apps (`feat: add home screen`).
+- **Description** — write it from `git diff master...HEAD` and `git log master..HEAD`, not from memory, in this order:
+  1. **Summary** — one or two sentences: what the PR delivers and why.
+  2. **What's implemented** — grouped by app (*Backend*, *Frontend*, *Docs*), one bullet per user-visible change or notable refactor/fix.
+  3. **API changes** — every added, changed or removed endpoint as `METHOD /path` with its query params/body and response shape; mark breaking changes. Write "None" if the API is untouched.
+  4. **How it was verified** — the checks run (`mvn test`, `pnpm lint`, `pnpm exec tsc --noEmit`) with their result, plus any manual testing.
+  5. **Notes** — follow-ups, known gaps, anything a reviewer should look at closely (optional).
+- Pass the body with `gh pr create --body-file <file>` so Markdown survives the shell.
