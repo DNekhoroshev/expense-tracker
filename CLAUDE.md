@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Early-stage monorepo. The backend has users, JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/users/me`), categories and transactions (`/api/transactions`, listed per month/year with income/expense totals); the frontend has the login and register pages plus the client-side session plumbing. Everything else is still to come.
+Early-stage monorepo. The backend has users, JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/users/me`), categories and transactions (`/api/transactions`, listed per month/year with income/expense totals; `/api/transactions/recent`, all of them newest first, paginated); the frontend has the login and register pages, the client-side session plumbing and the home screen (menu, user profile, recent transactions with pagination). The transactions and categories pages are placeholders; everything else is still to come.
 
 ## Architecture
 
@@ -24,10 +24,10 @@ The two apps communicate over HTTP; the frontend's API base URL is configured vi
 | Layer | Path | Contains |
 | --- | --- | --- |
 | app | `src/app/` | Next.js App Router routes + global setup (`globals.css`, `providers.tsx`) |
-| pages | `src/views/` | Whole-page compositions (`LoginPage`, `RegisterPage`, `HomePage`) |
-| widgets | `src/widgets/` | Composite blocks reused across pages (none yet) |
+| pages | `src/views/` | Whole-page compositions (`LoginPage`, `RegisterPage`, `HomePage`, `TransactionsPage`, `CategoriesPage`) |
+| widgets | `src/widgets/` | Composite blocks reused across pages (`app-header`, `recent-transactions`) |
 | features | `src/features/` | User-facing actions (`auth/login`, `auth/register`, `auth/logout`) |
-| entities | `src/entities/` | Business entities (`user`, `session`) |
+| entities | `src/entities/` | Business entities (`user`, `session`, `transaction`, `category`) |
 | shared | `src/shared/` | Reusable, domain-agnostic code (`ui`, `api`, `config`, `lib`) |
 
 Rules to keep:
@@ -43,7 +43,7 @@ Rules to keep:
 - **UI — [shadcn/ui](https://ui.shadcn.com)** (new-york style) on Tailwind CSS v4. Components are vendored into `src/shared/ui/`, configured by `frontend/components.json`; add more with `pnpm dlx shadcn@latest add <component>` and re-export them from `src/shared/ui/index.ts`. Do not hand-edit generated component files unless a change is genuinely needed — `shadcn add` overwrites them. Theme tokens live in `src/app/globals.css` (Tailwind v4 is CSS-first: there is no `tailwind.config.ts`).
 - **Forms** — `react-hook-form` + `zod` via `@hookform/resolvers`. Each form's schema sits in the feature's `model/` segment and mirrors the backend's bean validation, so the client catches what the server would reject.
 - **API access** — `apiRequest` in `src/shared/api/` wraps `fetch`, and turns transport failures and non-2xx responses (RFC 7807 problem details) into a single `ApiError`. Features never call `fetch` directly.
-- **Session** — `entities/session` keeps the access token and user in `localStorage` under `expense-tracker:session` and exposes them through `SessionProvider` / `useSession()` (mounted in `src/app/providers.tsx`). It is client-side only, so the session is `"loading"` during SSR and the first render; auth pages are guarded by `src/app/(auth)/layout.tsx`, which bounces signed-in visitors home.
+- **Session** — `entities/session` keeps the access token and user in `localStorage` under `expense-tracker:session` and exposes them through `SessionProvider` / `useSession()` (mounted in `src/app/providers.tsx`). It is client-side only, so the session is `"loading"` during SSR and the first render; auth pages are guarded by `src/app/(auth)/layout.tsx`, which bounces signed-in visitors home, and members-only pages by `src/app/(protected)/layout.tsx`, which sends anonymous visitors to the login page (a UX guard only — the backend enforces access).
 
 ## Commands
 
