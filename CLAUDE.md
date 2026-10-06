@@ -92,3 +92,16 @@ Messages follow [Conventional Commits](https://www.conventionalcommits.org):
 - One logical change per commit; keep backend and frontend changes in separate commits unless they only make sense together.
 - Run the relevant checks before committing: `mvn test` for backend, `pnpm lint` and `pnpm exec tsc --noEmit` for frontend.
 - Never commit secrets (`.env`) or build output (`target/`, `.next/`, `*.tsbuildinfo`).
+
+## Branching — GitHub Flow
+
+The project follows [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow): one long-lived branch, short-lived topic branches, everything merged through pull requests.
+
+- **The main branch is always deployable.** Never commit or push directly to it; every change lands through a pull request. (Until the GitHub remote exists the local default branch may still be called `master`; it is renamed to `main` when the repo is published.)
+- **One branch per change**, always created from an up-to-date main branch: `git switch main && git pull && git switch -c <type>/<short-name>`.
+- **Branch names** are `<type>/<short-kebab-case-name>`, where `<type>` is one of the Conventional Commit types (`feat`, `fix`, `refactor`, `docs`, `chore`, …) — e.g. `feat/home-screen`, `fix/login-redirect`. Optionally add the issue number: `feat/42-home-screen`.
+- **Keep branches short-lived and focused.** One feature or fix per branch; unrelated changes go to a separate branch. Sync with main (merge or rebase) when it moves on, rather than letting the branch drift.
+- **Commit early and often** on the branch, following the commit conventions above; the checks listed there must pass before opening a PR.
+- **Open a pull request** into main as soon as there is something to discuss (a draft PR is fine). The PR title follows the commit subject format; the description says what changed and why and how it was verified.
+- **Merge only after review and green checks**, preferably as a squash merge so the main history has one Conventional Commit per PR. Delete the branch after merging.
+- Claude does not push, open or merge PRs, or delete branches unless asked.
