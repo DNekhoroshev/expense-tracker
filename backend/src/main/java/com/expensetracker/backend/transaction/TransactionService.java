@@ -4,6 +4,8 @@ import com.expensetracker.backend.category.Category;
 import com.expensetracker.backend.category.CategoryRepository;
 import com.expensetracker.backend.user.User;
 import com.expensetracker.backend.user.UserRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +46,7 @@ public class TransactionService {
         }
 
         List<TransactionResponse> items = transactionRepository
-                .findAllByUserIdAndDateBetweenOrderByDateDescIdDesc(userId, from, to).stream()
+                .findAllByUser_IdAndDateBetweenOrderByDateDescIdDesc(userId, from, to).stream()
                 .map(TransactionResponse::from)
                 .toList();
 
@@ -53,6 +55,19 @@ public class TransactionService {
 
         return new TransactionListResponse(year, month, items, totalIncome, totalExpense,
                 totalIncome.subtract(totalExpense));
+    }
+
+    /**
+     * Newest first, ties broken by id: the same order as {@link #findAll}'s
+     * {@code OrderByDateDescIdDesc}. Public so the repository query test can run it against the database.
+     */
+    public static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "date").and(Sort.by(Sort.Direction.DESC, "id"));
+
+    /** Pages through all of the user's transactions in {@link #NEWEST_FIRST} order. */
+    @Transactional(readOnly = true)
+    public TransactionPageResponse findRecent(Long userId, int page, int size) {
+        return TransactionPageResponse.from(
+                transactionRepository.findAllByUser_Id(userId, PageRequest.of(page, size, NEWEST_FIRST)));
     }
 
     @Transactional(readOnly = true)
@@ -102,13 +117,13 @@ public class TransactionService {
      * rather than leaking that the transaction exists.
      */
     private Transaction requireOwned(Long userId, Long transactionId) {
-        return transactionRepository.findByIdAndUserId(transactionId, userId)
+        return transactionRepository.findByIdAndUser_Id(transactionId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
     }
 
     /** The category comes from the request body, so a missing or foreign one is a bad request, not a 404. */
     private Category requireOwnedCategory(Long userId, Long categoryId) {
-        return categoryRepository.findByIdAndUserId(categoryId, userId)
+        return categoryRepository.findByIdAndUser_Id(categoryId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found"));
     }
 

@@ -10,6 +10,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -20,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -54,7 +58,7 @@ class TransactionServiceTest {
         TransactionRequest request = new TransactionRequest(
                 new BigDecimal("12.50"), TransactionType.EXPENSE, "  Milk  ", LocalDate.of(2026, 9, 1), 5L);
 
-        when(categoryRepository.findByIdAndUserId(5L, USER_ID)).thenReturn(Optional.of(groceries));
+        when(categoryRepository.findByIdAndUser_Id(5L, USER_ID)).thenReturn(Optional.of(groceries));
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -76,7 +80,7 @@ class TransactionServiceTest {
         TransactionRequest request = new TransactionRequest(
                 new BigDecimal("1.00"), TransactionType.EXPENSE, "   ", LocalDate.of(2026, 9, 1), 5L);
 
-        when(categoryRepository.findByIdAndUserId(5L, USER_ID)).thenReturn(Optional.of(groceries));
+        when(categoryRepository.findByIdAndUser_Id(5L, USER_ID)).thenReturn(Optional.of(groceries));
         when(userRepository.getReferenceById(USER_ID)).thenReturn(user);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -89,7 +93,7 @@ class TransactionServiceTest {
     void create_otherUsersCategory_throwsBadRequest() {
         TransactionRequest request = new TransactionRequest(
                 new BigDecimal("12.50"), TransactionType.EXPENSE, null, LocalDate.of(2026, 9, 1), 5L);
-        when(categoryRepository.findByIdAndUserId(5L, USER_ID)).thenReturn(Optional.empty());
+        when(categoryRepository.findByIdAndUser_Id(5L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> transactionService.create(USER_ID, request))
                 .isInstanceOf(ResponseStatusException.class)
@@ -102,7 +106,7 @@ class TransactionServiceTest {
     void findAll_month_usesMonthBoundsAndComputesTotals() {
         LocalDate from = LocalDate.of(2028, 2, 1);
         LocalDate to = LocalDate.of(2028, 2, 29);
-        when(transactionRepository.findAllByUserIdAndDateBetweenOrderByDateDescIdDesc(USER_ID, from, to))
+        when(transactionRepository.findAllByUser_IdAndDateBetweenOrderByDateDescIdDesc(USER_ID, from, to))
                 .thenReturn(List.of(
                         transaction(salary, "1000.00", TransactionType.INCOME),
                         transaction(groceries, "120.25", TransactionType.EXPENSE),
@@ -123,7 +127,7 @@ class TransactionServiceTest {
     void findAll_withoutMonth_usesYearBounds() {
         LocalDate from = LocalDate.of(2026, 1, 1);
         LocalDate to = LocalDate.of(2026, 12, 31);
-        when(transactionRepository.findAllByUserIdAndDateBetweenOrderByDateDescIdDesc(USER_ID, from, to))
+        when(transactionRepository.findAllByUser_IdAndDateBetweenOrderByDateDescIdDesc(USER_ID, from, to))
                 .thenReturn(List.of());
 
         TransactionListResponse response = transactionService.findAll(USER_ID, 2026, null);
@@ -136,10 +140,34 @@ class TransactionServiceTest {
     }
 
     @Test
+    void findRecent_requestsNewestFirstPageAndMapsIt() {
+        when(transactionRepository.findAllByUser_Id(any(), any(Pageable.class)))
+                .thenAnswer(invocation -> new PageImpl<>(
+                        List.of(transaction(groceries, "12.50", TransactionType.EXPENSE)),
+                        invocation.getArgument(1), 21));
+
+        TransactionPageResponse response = transactionService.findRecent(USER_ID, 1, 10);
+
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(transactionRepository).findAllByUser_Id(eq(USER_ID), captor.capture());
+        Pageable pageable = captor.getValue();
+
+        assertThat(pageable.getPageNumber()).isEqualTo(1);
+        assertThat(pageable.getPageSize()).isEqualTo(10);
+        assertThat(pageable.getSort()).containsExactly(Sort.Order.desc("date"), Sort.Order.desc("id"));
+
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.totalElements()).isEqualTo(21);
+        assertThat(response.totalPages()).isEqualTo(3);
+    }
+
+    @Test
     void update_changesOnlyProvidedFields() {
         Transaction transaction = new Transaction(user, groceries, new BigDecimal("12.50"),
                 TransactionType.EXPENSE, "Milk", LocalDate.of(2026, 9, 1));
-        when(transactionRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.of(transaction));
+        when(transactionRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.of(transaction));
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         transactionService.update(USER_ID, 10L,
@@ -150,15 +178,15 @@ class TransactionServiceTest {
         assertThat(transaction.getDescription()).isEqualTo("Milk");
         assertThat(transaction.getDate()).isEqualTo(LocalDate.of(2026, 9, 1));
         assertThat(transaction.getCategory()).isSameAs(groceries);
-        verify(categoryRepository, never()).findByIdAndUserId(any(), any());
+        verify(categoryRepository, never()).findByIdAndUser_Id(any(), any());
     }
 
     @Test
     void update_newCategory_mustBeOwned() {
         Transaction transaction = new Transaction(user, groceries, new BigDecimal("12.50"),
                 TransactionType.EXPENSE, "Milk", LocalDate.of(2026, 9, 1));
-        when(transactionRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.of(transaction));
-        when(categoryRepository.findByIdAndUserId(7L, USER_ID)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.of(transaction));
+        when(categoryRepository.findByIdAndUser_Id(7L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> transactionService.update(USER_ID, 10L,
                 new TransactionPatchRequest(null, null, null, null, 7L)))
@@ -170,7 +198,7 @@ class TransactionServiceTest {
 
     @Test
     void findOne_otherUsersTransaction_throwsNotFound() {
-        when(transactionRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> transactionService.findOne(USER_ID, 10L))
                 .isInstanceOf(ResponseStatusException.class)
@@ -179,7 +207,7 @@ class TransactionServiceTest {
 
     @Test
     void update_otherUsersTransaction_throwsNotFound() {
-        when(transactionRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> transactionService.update(USER_ID, 10L,
                 new TransactionPatchRequest(new BigDecimal("1.00"), null, null, null, null)))
@@ -189,7 +217,7 @@ class TransactionServiceTest {
 
     @Test
     void delete_otherUsersTransaction_throwsNotFound() {
-        when(transactionRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.empty());
+        when(transactionRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> transactionService.delete(USER_ID, 10L))
                 .isInstanceOf(ResponseStatusException.class)
@@ -201,7 +229,7 @@ class TransactionServiceTest {
     @Test
     void delete_ownTransaction_removesIt() {
         Transaction transaction = transaction(groceries, "12.50", TransactionType.EXPENSE);
-        when(transactionRepository.findByIdAndUserId(10L, USER_ID)).thenReturn(Optional.of(transaction));
+        when(transactionRepository.findByIdAndUser_Id(10L, USER_ID)).thenReturn(Optional.of(transaction));
 
         transactionService.delete(USER_ID, 10L);
 
